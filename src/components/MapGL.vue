@@ -2,8 +2,8 @@
   <div class="map-container">
     <div class="map-container-GL" ref="mapGL"></div>
     <div class="map-container-btns">
-      <div class="btn-item" @click="zoomToAllAreas">查看所有区域</div>
-      <div class="btn-item" v-for="(area, index) in areas" :key="index" @click="zoomToArea(index)">{{ area.name }}</div>
+      <div class="btn-qy" @click="zoomToFQAreas">福泉园区</div>
+      <div class="btn-item" v-for="(area, index) in FQAreas" :key="index" @click="zoomToArea(index)">{{ area.name }}</div>
     </div>
   </div>
 </template>
@@ -26,9 +26,9 @@ export default {
       },
       map: null,
       BMapGL: null,
-      areas: [
+      FQAreas: [
         {
-          name: '马场坪工业园区园区',
+          name: '区块一',
           path: machangping,
           strokeColor: '#5679ea',
           fillColor: '#5679ea',
@@ -36,7 +36,7 @@ export default {
           polygon: null
         },
         {
-          name: '双龙工业园区(双龙组团)',
+          name: '区块二',
           path: shuanglongzutuan,
           strokeColor: '#5679ea',
           fillColor: '#5679ea',
@@ -44,7 +44,7 @@ export default {
           polygon: null
         },
         {
-          name: '双龙工业园区(罗尾塘组团)',
+          name: '区块三',
           path: luoweitangzutuan,
           strokeColor: '#5679ea',
           fillColor: '#5679ea',
@@ -75,7 +75,7 @@ export default {
       this.setAreas()
     },
     setAreas() {
-      this.areas.forEach(area => {
+      this.FQAreas.forEach(area => {
         const points = area.path.map(coord => new this.BMapGL.Point(coord.lng, coord.lat))
         area.polygon = new this.BMapGL.Polygon(points, {
           strokeColor: area.strokeColor,
@@ -108,14 +108,14 @@ export default {
       const maxLat = Math.max(...lats)
       return new this.BMapGL.Point((minLng + maxLng) / 2, (minLat + maxLat) / 2)
     },
-    zoomToAllAreas() {
-      const points = this.areas.flatMap(area => 
+    zoomToFQAreas() {
+      const points = this.FQAreas.flatMap(area => 
         area.path.map(coord => new this.BMapGL.Point(coord.lng, coord.lat))
       )
       this.map.setViewport(points)
     },
     zoomToArea(index) {
-      const area = this.areas[index]
+      const area = this.FQAreas[index]
       const points = area.path.map(coord => new this.BMapGL.Point(coord.lng, coord.lat))
       const center = this.calculateCenter(points)
       // 设置动画参数
@@ -175,16 +175,29 @@ export default {
 <style lang="scss" scoped>
 .map-container {
   position: relative;
+  width: 100%;
+  height: 100vh;
   &-GL {
     width: 100%;
-    height: 100vh;
+    height: 100%;
   }
   &-btns {
     position: absolute;
     z-index: 1000;
     right: W(40);
-    top: H(100);
+    bottom: H(50);
     color: $font-text-color-light;
+    .btn-qy {
+      background: #6de6f8;
+      text-align: center;
+      margin: H(20) 0;
+      padding: H(10);
+      border-radius: W(8);
+      font-size: W(20);
+      &:hover {
+        cursor: pointer;
+      }
+    }
     .btn-item {
       text-align: center;
       margin: H(20) 0;
