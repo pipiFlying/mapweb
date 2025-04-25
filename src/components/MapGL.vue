@@ -2,6 +2,7 @@
   <div class="map-container">
     <div id="GL" class="map-container-GL" ref="mapGL"></div>
     <div class="map-container-btns">
+      <!-- <div class="btn-qy" v-for="type in typeOptions" :key="type.value" @click="setType(type.value)">{{ type.label }}</div> -->
       <div class="btn-qy" @click="zoomToFQAreas">福泉园区</div>
       <div class="btn-item" v-for="(area, index) in FQAreas" :key="index" @click="zoomToArea(index)">{{ area.name }}</div>
     </div>
@@ -25,39 +26,44 @@ export default {
           lat: 26.808498502453208
         },
         zoom: 12,
-        tilt: 0,
+        tilt: 60,
         heading: 0,
-        styleId: 'd674a6396fd8c655b5b0d08117400fa4'
+        // styleId: 'd674a6396fd8c655b5b0d08117400fa4' // 科技深蓝
+        styleId: 'bba1021466c07f185d4b13a21d86d8ee' // 卫星绿
       },
       map: null,
       BMapGL: null,
       MapType: null,
+      typeOptions: [
+        { label: '卫星', value: 'wx' },
+        { label: '3D', value: '3d' }
+      ],
       FQAreas: [
         {
           name: '区块一',
           alias: '区块一：马场坪工业园区',
           path: machangping,
-          strokeColor: '#5679ea',
-          fillColor: '#5679ea',
-          strokeStyle: "dashed",
+          strokeColor: '#33eaff',
+          fillColor: '#33eaff',
+          strokeStyle: "solid",
           polygon: null
         },
         {
           name: '区块二',
           alias: '区块二：双龙工业园区（双龙组团）',
           path: shuanglongzutuan,
-          strokeColor: '#5679ea',
-          fillColor: '#5679ea',
-          strokeStyle: "dashed",
+          strokeColor: '#33eaff',
+          fillColor: '#33eaff',
+          strokeStyle: "solid",
           polygon: null
         },
         {
           name: '区块三',
           alias: '区块三：双龙工业园区（罗尾塘组团）',
           path: luoweitangzutuan,
-          strokeColor: '#5679ea',
-          fillColor: '#5679ea',
-          strokeStyle: "dashed",
+          strokeColor: '#33eaff',
+          fillColor: '#33eaff',
+          strokeStyle: "solid",
           polygon: null
         }
       ]
@@ -83,13 +89,21 @@ export default {
       })
       this.map.centerAndZoom(new this.BMapGL.Point(this.mapOptions.FQcenter.lng, this.mapOptions.FQcenter.lat), this.mapOptions.zoom)
       this.map.setTilt(this.mapOptions.tilt)
-      // this.map.setMapStyleV2({ styleId: this.mapOptions.styleId })
+      this.map.setMapStyleV2({ styleId: this.mapOptions.styleId })
       this.map.enableScrollWheelZoom()
-      this.map.setMinZoom(10)
       this.map.setMaxZoom(17)
+      this.map.setMinZoom(10)
       // eslint-disable-next-line no-undef
       this.MapType = 'BMAP_SATELLITE_MAP'
       this.map.enableContinuousZoom()
+      // eslint-disable-next-line no-undef
+      // this.map.setMapType(BMAP_NORMAL_MAP)
+      // eslint-disable-next-line no-undef
+      // this.map.setMapType(BMAP_HYBRID_MAP)
+      // eslint-disable-next-line no-undef
+      // this.map.setMapType(BMAP_EARTH_MAP)
+      // eslint-disable-next-line no-undef
+      this.map.setMapType(BMAP_SATELLITE_MAP)
       this.setupListeners()
       this.setAreas()
     },
@@ -98,7 +112,7 @@ export default {
         const points = area.path.map(coord => new this.BMapGL.Point(coord.lng, coord.lat))
         area.polygon = new this.BMapGL.Polygon(points, {
           strokeColor: area.strokeColor,
-          strokeWeight: 2,
+          strokeWeight: 4,
           strokeOpacity: 1,
           fillColor: area.fillColor,
           fillOpacity: 0.2,
@@ -192,15 +206,29 @@ export default {
       this.map.addOverlay(customOverlay)
     },
     setupListeners() {
-      // const that = this
-      // that.map.addEventListener('zoomend', () => {
-      //   const zoom = that.map.getZoom()
-      //   zoom <= 14 ? that.MapType = 'BMAP_EARTH_MAP' : that.MapType = 'BMAP_SATELLITE_MAP'
-      // })
+      const that = this
+      that.map.addEventListener('zoomend', () => {
+        const zoom = that.map.getZoom()
+        zoom <= 14 ? that.MapType = 'BMAP_EARTH_MAP' : that.MapType = 'BMAP_SATELLITE_MAP'
+      })
     },
     updateMapType(type) {
+      console.log(type)
       // eslint-disable-next-line no-undef
-      type === 'BMAP_EARTH_MAP' ? this.map.setMapType(BMAP_EARTH_MAP) : this.map.setMapType(BMAP_SATELLITE_MAP)
+      // this.map.setMapType(BMAP_EARTH_MAP)
+      // type === 'BMAP_EARTH_MAP' ? this.map.setMapType(BMAP_EARTH_MAP) : this.map.setMapType(BMAP_SATELLITE_MAP)
+    },
+    setType(type) {
+      if (type === '3d') {
+        // eslint-disable-next-line no-undef
+        this.map.setMapType(BMAP_NORMAL_MAP)
+      } else if (type === 'wx') {
+        // eslint-disable-next-line no-undef
+        this.map.setMapType(BMAP_EARTH_MAP)
+      }
+      // eslint-disable-next-line no-undef
+      // this.map.setMapType(BMAP_NORMAL_MAP)
+      // this.MapType = this.MapType === 'BMAP_EARTH_MAP' ? 'BMAP_SATELLITE_MAP' : 'BMAP_EARTH_MAP'
     }
   },
   beforeDestroy() {
