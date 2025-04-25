@@ -3,7 +3,7 @@
     <baidu-map
       class="map"
       :center="center"
-      :zoom="12"
+      :zoom="zoom"
       :tilt="tilt"
       :heading="heading"
       :scroll-wheel-zoom="true"
@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import { machangping, shuanglongzutuan, luoweitangzutuan } from '@/json/index'
+import { machangping, shuanglongzutuan, luoweitangzutuan, wongan3 } from '@/json/index'
 export default {
   name: 'DrawRegionMap',
   components: {
@@ -34,10 +34,10 @@ export default {
   data() {
     return {
       center: {
-        lng: 107.52355584632284,
-        lat: 26.660076883968387
+        "lng": 107.49962498754489,
+        "lat": 27.172586719525082
       },
-      zoom: 18,
+      zoom: 16,
       tilt: 45, // 倾斜角度
       heading: 0, // 旋转角度
       areas: [
@@ -58,6 +58,12 @@ export default {
           strokeColor: 'yellow',
           fillColor: '#ccffcc',
           strokeStyle: "dashed"
+        },
+        {
+          path: wongan3,
+          strokeColor: 'yellow',
+          fillColor: '#ccffcc',
+          strokeStyle: "dashed"
         }
       ]
     }
@@ -65,15 +71,16 @@ export default {
   methods: {
     onMapReady({ BMap, map }) {
       console.log('地图加载完成');
-      map.setMapStyleV2({     
-        styleId: 'd674a6396fd8c655b5b0d08117400fa4'
-      });
+      // map.setMapStyleV2({     
+      //   styleId: 'd674a6396fd8c655b5b0d08117400fa4'
+      // });
       map.disableScrollWheelZoom(); // 禁用默认滚轮缩放
 
       let lastZoomTime = 0;
       const throttleDelay = 300; // 节流间隔（单位 ms）
       const zoomStep = 1; // 每次缩放的颗粒度（可以调整为 1、0.5、2 等）
-
+      // eslint-disable-next-line no-undef
+      map.setMapType(BMAP_HYBRID_MAP)
       map.getContainer().addEventListener('wheel', (e) => {
         const now = Date.now();
         if (now - lastZoomTime < throttleDelay) return;

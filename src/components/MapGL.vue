@@ -1,6 +1,6 @@
 <template>
   <div class="map-container">
-    <div class="map-container-GL" ref="mapGL"></div>
+    <div id="GL" class="map-container-GL" ref="mapGL"></div>
     <div class="map-container-btns">
       <div class="btn-qy" @click="zoomToFQAreas">福泉园区</div>
       <div class="btn-item" v-for="(area, index) in FQAreas" :key="index" @click="zoomToArea(index)">{{ area.name }}</div>
@@ -10,6 +10,8 @@
 
 <script>
 import { machangping, shuanglongzutuan, luoweitangzutuan } from '@/json/index'
+import { loadBMapGL } from '@/utils/index'
+
 export default {
   name: 'MapGL',
   components: {
@@ -18,17 +20,22 @@ export default {
   data() {
     return {
       mapOptions: {
-        center: { lng: 107.52355584632284, lat: 26.660076883968387 },
-        zoom: 13,
-        tilt: 60,
+        FQcenter: {
+          lng: 107.46290225830913,
+          lat: 26.808498502453208
+        },
+        zoom: 12,
+        tilt: 0,
         heading: 0,
         styleId: 'd674a6396fd8c655b5b0d08117400fa4'
       },
       map: null,
       BMapGL: null,
+      MapType: null,
       FQAreas: [
         {
           name: '区块一',
+          alias: '区块一：马场坪工业园区',
           path: machangping,
           strokeColor: '#5679ea',
           fillColor: '#5679ea',
@@ -37,6 +44,7 @@ export default {
         },
         {
           name: '区块二',
+          alias: '区块二：双龙工业园区（双龙组团）',
           path: shuanglongzutuan,
           strokeColor: '#5679ea',
           fillColor: '#5679ea',
@@ -45,6 +53,7 @@ export default {
         },
         {
           name: '区块三',
+          alias: '区块三：双龙工业园区（罗尾塘组团）',
           path: luoweitangzutuan,
           strokeColor: '#5679ea',
           fillColor: '#5679ea',
@@ -54,24 +63,34 @@ export default {
       ]
     }
   },
+  watch: {
+    MapType: {
+      immediate: true,
+      handler(val) {
+        val && this.updateMapType(val)
+      }
+    }
+  },
   mounted() {
-    this.loadBMapGL()
+    loadBMapGL(this.onMapReady)
   },
   methods: {
-    loadBMapGL() {
-      const script = document.createElement('script')
-      script.src = `https://api.map.baidu.com/api?v=1.0&type=webgl&ak=${process.env.VUE_APP_BMAK}&callback=onMapReady`
-      document.body.appendChild(script)
-      window.onMapReady = () => { this.onMapReady() }
-    },
     onMapReady() {
       // eslint-disable-next-line no-undef
-      if (BMapGL) this.BMapGL = BMapGL
-      this.map = new this.BMapGL.Map(this.$refs.mapGL)
-      this.map.centerAndZoom(new this.BMapGL.Point(this.mapOptions.center.lng, this.mapOptions.center.lat), this.mapOptions.zoom)
+      BMapGL && (this.BMapGL = BMapGL)
+      this.map = new this.BMapGL.Map(this.$refs.mapGL, {
+        enableHighResolution: false,
+      })
+      this.map.centerAndZoom(new this.BMapGL.Point(this.mapOptions.FQcenter.lng, this.mapOptions.FQcenter.lat), this.mapOptions.zoom)
       this.map.setTilt(this.mapOptions.tilt)
-      this.map.setMapStyleV2({ styleId: this.mapOptions.styleId })
+      // this.map.setMapStyleV2({ styleId: this.mapOptions.styleId })
       this.map.enableScrollWheelZoom()
+      this.map.setMinZoom(10)
+      this.map.setMaxZoom(17)
+      // eslint-disable-next-line no-undef
+      this.MapType = 'BMAP_SATELLITE_MAP'
+      this.map.enableContinuousZoom()
+      this.setupListeners()
       this.setAreas()
     },
     setAreas() {
@@ -80,7 +99,7 @@ export default {
         area.polygon = new this.BMapGL.Polygon(points, {
           strokeColor: area.strokeColor,
           strokeWeight: 2,
-          strokeOpacity: 0.8,
+          strokeOpacity: 1,
           fillColor: area.fillColor,
           fillOpacity: 0.2,
           strokeStyle: area.strokeStyle,
@@ -109,10 +128,18 @@ export default {
       return new this.BMapGL.Point((minLng + maxLng) / 2, (minLat + maxLat) / 2)
     },
     zoomToFQAreas() {
-      const points = this.FQAreas.flatMap(area => 
-        area.path.map(coord => new this.BMapGL.Point(coord.lng, coord.lat))
-      )
-      this.map.setViewport(points)
+      const viewport = {
+        center: new this.BMapGL.Point(this.mapOptions.FQcenter.lng, this.mapOptions.FQcenter.lat),
+        zoom: 12,
+        tilt: this.mapOptions.tilt,
+      }
+      const options = {
+        duration: 1000,
+        delay: 0,
+        // eslint-disable-next-line no-undef
+        type: BMAP_ANIMATION_BOUNCE
+      }
+      this.map.setViewport(viewport, options)
     },
     zoomToArea(index) {
       const area = this.FQAreas[index]
@@ -128,7 +155,7 @@ export default {
         duration: 1000,
         delay: 0,
         // eslint-disable-next-line no-undef
-        type: BMAP_ANIMATION_BOUNCE // 弹跳动画效果
+        type: BMAP_ANIMATION_BOUNCE
       }
       this.map.setViewport(viewport, options)
     },
@@ -144,7 +171,7 @@ export default {
         container.className = 'custom-overlay'
         container.innerHTML = `
           <div class="custom-overlay-box">
-            <div class="custom-overlay-title">${area.name}</div>
+            <div class="custom-overlay-title">${area.alias}</div>
           </div>`
         const arrow = document.createElement('div')
         container.appendChild(arrow)
@@ -158,11 +185,22 @@ export default {
         const div = this._div
         const width = div.offsetWidth
         const height = div.offsetHeight
-        div.style.left = pixel.x - width / 2 + "px"
-        div.style.top = pixel.y - 2 * height + "px"  // 向上偏移
+        div.style.left = pixel.x - width / 2 + 'px'
+        div.style.top = pixel.y - 2 * height + 'px'
       }
       const customOverlay = new CustomOverlay(point)
       this.map.addOverlay(customOverlay)
+    },
+    setupListeners() {
+      // const that = this
+      // that.map.addEventListener('zoomend', () => {
+      //   const zoom = that.map.getZoom()
+      //   zoom <= 14 ? that.MapType = 'BMAP_EARTH_MAP' : that.MapType = 'BMAP_SATELLITE_MAP'
+      // })
+    },
+    updateMapType(type) {
+      // eslint-disable-next-line no-undef
+      type === 'BMAP_EARTH_MAP' ? this.map.setMapType(BMAP_EARTH_MAP) : this.map.setMapType(BMAP_SATELLITE_MAP)
     }
   },
   beforeDestroy() {
@@ -173,6 +211,14 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+// #GL canvas {
+//   transform: scale(0.5) translate(-50%, -50%);
+//   transform-origin: top left;
+// }
+// #GL.zooming canvas {
+//   opacity: 0.8;
+//   transition: opacity 0.3s ease;
+// }
 .map-container {
   position: relative;
   width: 100%;
@@ -217,7 +263,7 @@ export default {
 .custom-overlay {
   position: absolute;
   bottom: 0;
-  height: H(60);
+  height: H(80);
   width: W(220);
   font-size: W(16);
   background-color: rgba(0, 60, 120, 0.6);
@@ -225,6 +271,7 @@ export default {
   border-radius: W(8);
   color: $font-text-color-light;
   &-title {
+    height: H(80);
     padding: W(10);
     text-align: center;
   }
@@ -233,7 +280,7 @@ export default {
   width: 0;
   height: 0;
   margin: 0 auto;
-  margin-top: W(8);
+  margin-top: W(-20);
   border-left: W(16) solid transparent;
   border-right: W(16) solid transparent;
   border-top: W(16) solid rgba(0, 60, 120, 0.6);
